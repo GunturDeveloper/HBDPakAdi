@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Selamat Ulang Tahun — Bapak Novri Adi Chandra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+html, body {
+  margin: 0; height: 100%; background: #07080c; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+canvas {
+  width: min(100vw, calc(100vh * 3 / 4));
+  max-height: 100vh;
+  aspect-ratio: 3 / 4;
+  image-rendering: pixelated;
+  background: #07080c;
+  touch-action: none;
+  outline: none;
+  box-shadow: 0 0 48px rgba(0,0,0,0.65);
+}
+</style>
+</head>
+<body>
+<canvas id="c" width="480" height="640" tabindex="0"></canvas>
+<script>
+(() => {
+"use strict";
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const W = 480, H = 640;
+const AGE = 2026 - 1979;
+
+let time = 0;
+let phase = "intro";
+let lineI = 0;
+let charI = 0;
+let hold = 0;
+let confetti = [];
+let dust = [];
+for (let i = 0; i < 28; i++) dust.push({ x: Math.random() * W, y: Math.random() * 300, s: 1 + Math.random() * 1.5, p: Math.random() * 8 });
+
+const LINES = [
+  { who: "narr", t: "Ruang kerja PT Adhi Chandra Jaya. Rabu, 5 November 2026. Monitor menyala, berkas tertata di meja." },
+  { who: "guntur", e: "worry", t: "Selamat sore, Pak Adi. Mohon izin… ada yang perlu saya laporkan." },
+  { who: "adi", e: "neutral", t: "Guntur? Silakan. Ada apa?" },
+  { who: "guntur", e: "worry", t: "Soal project web internal yang kemarin. Saya cek folder kerjanya… file utamanya tidak ada." },
+  { who: "adi", e: "worry", t: "Tidak ada? Sudah dicari di backup?" },
+  { who: "guntur", e: "worry", t: "Sudah, Pak. Di lokal, di cloud, di flashdisk tim… semuanya kosong. Seolah belum pernah dikerjakan." },
+  { who: "adi", e: "worry", t: "Ini serius. Project internal itu dipakai tim. Kamu yakin?" },
+  { who: "guntur", e: "neutral", t: "Saya yakin, Pak. Tapi… sebelum Bapak khawatir lebih jauh—" },
+  { who: "guntur", e: "smirk", t: "Itu prank, Pak Adi. Project internal-nya aman. Saya cuma butuh alasan biar Bapak mau dengar saya sebentar." },
+  { who: "adi", e: "smirk", t: "…Guntur." },
+  { who: "guntur", e: "smile", t: "Maaf, Pak Adi. Benar-benar maaf. Jantung saya juga agak deg-degan barusan." },
+  { who: "adi", e: "smile", t: "Kamu berani sekali. Untung file-nya benar-benar aman. Kalau tidak, ini bukan prank lagi." },
+  { who: "guntur", e: "smile", t: "Aman, Pak. Sudah saya pastikan dua kali. Janji." },
+  { who: "adi", e: "smirk", t: "Baiklah. Lalu apa yang sebenarnya ingin kamu sampaikan?" },
+  { who: "guntur", e: "neutral", t: "Hari ini ulang tahun Bapak — 5 November. Saya cek kalender di dinding, tanggalnya pas." },
+  { who: "adi", e: "smile", t: "Jadi laporan project internal hilang itu hanya pembuka jalan?" },
+  { who: "guntur", e: "smirk", t: "Iya, Pak Adi. Kalau saya bilang langsung “selamat ulang tahun”, rasanya kurang pantas mengganggu. Jadi saya buat alasan dulu." },
+  { who: "adi", e: "smile", t: "Alasan yang bikin penasaran, memang. Silakan, Guntur. Saya dengar." },
+  { who: "guntur", e: "neutral", t: "Perkenalkan lagi, biar resmi. Saya Guntur Khoidir Putra, siswa SMK-SMTI Yogyakarta." },
+  { who: "guntur", e: "smile", t: "Saya sedang PKL di PT Adhi Chandra Jaya. Beberapa minggu ini saya mengerjakan project web atas permintaan Bapak — dan banyak belajar dari situ." },
+  { who: "adi", e: "neutral", t: "Baik. Kamu cukup rapi dalam mengerjakan tugas." },
+  { who: "guntur", e: "smile", t: "Itu karena Bapak dan rekan-rekan sabar mengarahkan. Di sekolah hanya teori. Di sini saya melihat praktiknya langsung." },
+  { who: "guntur", e: "neutral", t: "Cara menyusun berkas, merapikan kode, menyelesaikan project web tepat waktu — itu semua saya pelajari di sini." },
+  { who: "adi", e: "smile", t: "Bagus. Yang penting kamu paham alasannya, bukan hanya meniru langkahnya." },
+  { who: "guntur", e: "smile", t: "Siap, Pak Adi." },
+  { who: "guntur", e: "neutral", t: "Pak Adi… Bapak Novri Adi Chandra, lahir tahun 1979, kini berusia " + AGE + " tahun." },
+  { who: "guntur", e: "smile", t: "Semoga Bapak senantiasa diberi kesehatan. Badan segar, pikiran tenang, hari-hari berjalan dengan baik." },
+  { who: "adi", e: "smile", t: "Amin. Kesehatan memang anugerah yang perlu dijaga." },
+  { who: "guntur", e: "neutral", t: "Semoga PT Adhi Chandra Jaya terus berkembang. Project web yang Bapak percayakan berjalan lancar, tim kompak." },
+  { who: "guntur", e: "smile", t: "Semoga rezeki selalu ada jalannya — yang berkah, yang menenangkan, yang cukup untuk keluarga di rumah." },
+  { who: "adi", e: "neutral", t: "Doa yang baik. Rezeki yang menenangkan memang lebih berharga." },
+  { who: "guntur", e: "smile", t: "Semoga keluarga Bapak dilindungi. Orang-orang terdekat senantiasa dalam keadaan baik." },
+  { who: "guntur", e: "neutral", t: "Semoga setiap keputusan Bapak diberi kebijaksanaan, dan setiap langkah membawa hasil yang membahagiakan." },
+  { who: "adi", e: "smile", t: "Terima kasih. Kamu menyusun kata-katanya dengan rapi." },
+  { who: "guntur", e: "smirk", t: "Mungkin karena sering mendengar cara Bapak menjelaskan tugas. Ketularan sedikit." },
+  { who: "adi", e: "smile", t: "Bagus. Ketularan yang benar saja." },
+  { who: "guntur", e: "smile", t: "Selamat ulang tahun yang ke-" + AGE + ", Pak Adi." },
+  { who: "guntur", e: "neutral", t: "Semoga tahun ini penuh kebaikan. Lebih banyak momen yang menyenangkan, lebih banyak hal yang membuat bersyukur." },
+  { who: "guntur", e: "smile", t: "Dan semoga saya, sebagai anak PKL Bapak, bisa terus berguna selama di sini — dan kelak menjadi seseorang yang Bapak banggakan juga." },
+  { who: "adi", e: "smile", t: "Terima kasih, Guntur. Sore ini jadi istimewa karena kamu datang khusus untuk ini — dan berani prank project internal." },
+  { who: "adi", e: "neutral", t: "Teruslah serius, jujur, dan mau belajar. Sikap itu yang akan membawamu jauh." },
+  { who: "guntur", e: "smile", t: "Siap, Pak Adi. Saya usahakan." },
+  { who: "adi", e: "smile", t: "Kalau nanti masa PKL sudah selesai, jangan lupa tetap jaga silaturahmi. Pintu kantor ini tetap terbuka." },
+  { who: "guntur", e: "smile", t: "Insyaallah, Pak Adi. Saya tidak akan lupa." },
+  { who: "narr", t: "Guntur mengeluarkan kotak kecil dari tas. Di dalamnya sepotong kue. Lilinnya sudah dipasang." },
+  { who: "guntur", e: "smirk", t: "Ini sederhana, Pak Adi. Bukan dari toko mahal. Tapi lilinnya sudah saya siapkan." },
+  { who: "adi", e: "smile", t: "Yang sederhana justru yang paling mudah diingat. Mari." },
+  { who: "guntur", e: "smile", t: "Silakan, Pak Adi. Tiup. Semoga semua doa tadi ikut terkabul." },
+  { who: "adi", e: "smile", t: "Untuk " + AGE + " tahun yang sudah dilalui… dan untuk yang masih menanti di depan." },
+  { who: "narr", t: "Lilin padam. Ruangan sejenak sunyi, lalu kembali hangat." },
+  { who: "narr", t: "SELAMAT ULANG TAHUN" },
+  { who: "narr", t: "Bapak Novri Adi Chandra  ·  " + AGE + " tahun" },
+  { who: "narr", t: "Dengan hormat, dari anak PKL-mu" },
+  { who: "narr", t: "Guntur Khoidir Putra  ·  SMK-SMTI Yogyakarta" },
+  { who: "narr", t: "PT Adhi Chandra Jaya" },
+];
+
+const LOOKS = {
+  guntur: {
+    shirt: "#34724a", shirtD: "#245030",
+    pants: "#3a342c", pantsD: "#2a241c",
+    hair: "#2a1c14", hairH: "#4a3424",
+    skin: "#e0b080", skinD: "#c09060",
+    shoe: "#14110e",
+  },
+  adi: {
+    shirt: "#2a4a7a", shirtD: "#1a3050",
+    pants: "#2a2e38", pantsD: "#1a1e28",
+    hair: "#1a1410", hairH: "#2a2420",
+    skin: "#d4a878", skinD: "#b88858",
+    shoe: "#12100e",
+  },
+};
+
+function pr(x, y, w, h, c) {
+  ctx.fillStyle = c;
+  ctx.fillRect(x | 0, y | 0, w | 0, h | 0);
+}
+
+function text(str, x, y, size, color, align) {
+  // sans-serif lebih jelas di canvas daripada monospace kecil
+  const px = Math.max(11, size | 0);
+  ctx.font = "600 " + px + "px \"Segoe UI\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = color;
+  // soft shadow for contrast on dark panels
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillText(str, (x | 0) + 1, (y | 0) + 1);
+  ctx.fillStyle = color;
+  ctx.fillText(str, x | 0, y | 0);
+  ctx.restore();
+}
+
+function wrap(str, maxW, size) {
+  const px = Math.max(11, size | 0);
+  ctx.font = "600 " + px + "px \"Segoe UI\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif";
+  const words = String(str).split(" ");
+  const out = [];
+  let cur = "";
+  for (const w of words) {
+    const t = cur ? cur + " " + w : w;
+    if (ctx.measureText(t).width > maxW) {
+      if (cur) out.push(cur);
+      cur = w;
+    } else cur = t;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function drawOffice() {
+  // floor - wood-ish tiles
+  pr(0, 400, W, H - 400, "#2e3238");
+  for (let x = 0; x < W; x += 40) {
+    for (let y = 400; y < H; y += 40) {
+      const c = ((x + y) / 40 | 0) % 2 ? "#32363c" : "#2a2e34";
+      pr(x, y, 40, 40, c);
+      pr(x, y, 40, 1, "#3a3e44");
+    }
+  }
+
+  // wall base
+  pr(0, 0, W, 400, "#3e4650");
+  // upper trim
+  pr(0, 0, W, 28, "#2a323c");
+  pr(0, 26, W, 3, "#5a6470");
+  // wainscot
+  pr(0, 340, W, 60, "#343c46");
+  pr(0, 340, W, 3, "#5a6470");
+  for (let x = 20; x < W; x += 60) pr(x, 348, 2, 48, "#2a323c");
+
+  // company board - centered, nicer
+  pr(120, 40, 240, 44, "#1a222c");
+  pr(122, 42, 236, 40, "#2a4a6a");
+  pr(124, 44, 232, 3, "#4a7aaa");
+  text("PT ADHI CHANDRA JAYA", W / 2, 54, 13, "#f0f4f8", "center");
+
+  // large window left
+  pr(24, 100, 170, 150, "#1a2838");
+  // panes
+  pr(28, 104, 78, 68, "#2a5080");
+  pr(112, 104, 78, 68, "#2a5080");
+  pr(28, 178, 78, 68, "#1e3a5a");
+  pr(112, 178, 78, 68, "#1e3a5a");
+  // city lights
+  const blink = Math.sin(time * 2.2) > 0.15;
+  pr(42, 120, 7, 7, blink ? "#e8d080" : "#8a7040");
+  pr(70, 140, 5, 5, "#c85040");
+  pr(130, 125, 7, 7, blink ? "#70d0e8" : "#406880");
+  pr(155, 155, 5, 5, "#e0c870");
+  pr(50, 200, 6, 6, blink ? "#a0e0a0" : "#406040");
+  pr(140, 210, 5, 5, "#e8a060");
+  // frame
+  pr(24, 100, 170, 5, "#6a7480");
+  pr(24, 245, 170, 5, "#6a7480");
+  pr(24, 100, 5, 150, "#6a7480");
+  pr(189, 100, 5, 150, "#6a7480");
+  pr(104, 100, 5, 150, "#6a7480");
+  pr(24, 172, 170, 5, "#6a7480");
+  // curtain soft
+  pr(24, 100, 8, 150, "rgba(200,180,140,0.25)");
+  pr(186, 100, 8, 150, "rgba(200,180,140,0.25)");
+
+  // calendar
+  pr(210, 108, 68, 78, "#f4ece0");
+  pr(210, 108, 68, 18, "#c04040");
+  pr(210, 108, 68, 2, "#e06060");
+  text("NOV", 244, 112, 11, "#f4efe4", "center");
+  text("5", 244, 136, 22, "#1a1410", "center");
+  text("2026", 244, 166, 10, "#5a5040", "center");
+
+  // clock
+  pr(300, 108, 40, 40, "#e8e0d0");
+  pr(304, 112, 32, 32, "#f8f4ec");
+  pr(318, 120, 2, 10, "#1a1410"); // hour
+  pr(318, 126, 8, 2, "#1a1410"); // minute
+  pr(316, 124, 4, 4, "#c04040");
+
+  // bookshelf / cabinet right
+  pr(360, 100, 100, 240, "#4a3a2c");
+  pr(360, 100, 100, 6, "#6a5a4c");
+  pr(360, 334, 100, 6, "#3a2a1c");
+  // shelves
+  for (let i = 0; i < 4; i++) {
+    const sy = 110 + i * 54;
+    pr(368, sy, 84, 48, "#3a2e24");
+    pr(368, sy + 44, 84, 4, "#5a4a3c");
+    // books
+    const cols = ["#2a4a7a", "#8a1a1a", "#2a6a3a", "#6a4a8a", "#c87030", "#3a5a6a"];
+    let bx = 372;
+    for (let b = 0; b < 5; b++) {
+      const bh = 28 + (b % 3) * 4;
+      pr(bx, sy + 44 - bh, 12, bh, cols[(i + b) % cols.length]);
+      bx += 14;
+    }
+  }
+
+  // desk - larger, cleaner
+  pr(40, 348, 300, 22, "#5a4030");
+  pr(40, 348, 300, 5, "#7a5a40");
+  pr(40, 348, 300, 2, "#9a7a50");
+  pr(50, 370, 16, 40, "#3a2a1c");
+  pr(314, 370, 16, 40, "#3a2a1c");
+  // desk front panel
+  pr(48, 370, 284, 8, "#4a3424");
+
+  // dual monitors
+  pr(60, 300, 70, 48, "#1a2028");
+  pr(64, 304, 62, 36, "#2a5a8a");
+  pr(70, 316, 40, 4, "#70c8e0");
+  pr(80, 348, 30, 6, "#2a3038"); // stand
+  pr(140, 305, 60, 42, "#1a2028");
+  pr(144, 309, 52, 30, "#1e4060");
+  pr(150, 320, 30, 3, "#50a0c0");
+  pr(155, 348, 28, 6, "#2a3038");
+
+  // keyboard + mouse
+  pr(90, 340, 50, 10, "#2a2e34");
+  pr(95, 342, 40, 6, "#3a3e44");
+  pr(150, 342, 10, 8, "#2a2e34");
+
+  // papers stacked neat
+  pr(210, 332, 40, 14, "#f0e8d8");
+  pr(214, 328, 40, 12, "#e8e0d0");
+  pr(218, 324, 36, 10, "#f4efe4");
+  // folder
+  pr(260, 330, 32, 16, "#2a6a8a");
+  pr(264, 334, 24, 2, "#f0e8d8");
+
+  // pen holder
+  pr(300, 330, 14, 16, "#3a4a5a");
+  pr(302, 320, 3, 12, "#2a6aaa");
+  pr(307, 318, 3, 14, "#c04040");
+  pr(305, 322, 3, 10, "#2a8a4a");
+
+  // name plate gold
+  pr(200, 352, 110, 14, "#2a2420");
+  pr(202, 354, 106, 10, "#e0c888");
+  text("NOVRI ADI CHANDRA", 255, 355, 8, "#1a1410", "center");
+
+  // plant left corner - fuller
+  pr(20, 320, 24, 36, "#3a2a1c");
+  pr(14, 300, 36, 28, "#2a6a3a");
+  pr(18, 286, 14, 20, "#3a8a4a");
+  pr(32, 282, 16, 24, "#2a7a3a");
+  pr(24, 278, 12, 16, "#4aaa5a");
+
+  // small sofa / guest chair hint left of desk
+  pr(20, 380, 50, 28, "#3a4a5a");
+  pr(20, 380, 50, 6, "#4a5a6a");
+  pr(24, 400, 12, 10, "#2a3a4a");
+  pr(54, 400, 12, 10, "#2a3a4a");
+
+  // ceiling light glow
+  const g = ctx.createRadialGradient(W / 2, 20, 10, W / 2, 20, 240);
+  g.addColorStop(0, "rgba(255,235,190,0.16)");
+  g.addColorStop(1, "rgba(255,235,190,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, 300);
+
+  // window light shaft
+  const wg = ctx.createLinearGradient(30, 100, 100, 350);
+  wg.addColorStop(0, "rgba(180,210,240,0.08)");
+  wg.addColorStop(1, "rgba(180,210,240,0)");
+  ctx.fillStyle = wg;
+  ctx.fillRect(30, 100, 160, 260);
+
+  for (const d of dust) {
+    const a = 0.2 + 0.3 * Math.sin(time * 1.4 + d.p);
+    ctx.fillStyle = "rgba(240,230,200," + a + ")";
+    ctx.fillRect(d.x, d.y, d.s, d.s);
+  }
+}
+
+function drawActor(x, y, who, expr) {
+  const L = LOOKS[who];
+  const bob = Math.sin(time * 2.2 + (who === "adi" ? 1 : 0)) * 1.2;
+  const yy = y + bob;
+  const blink = (Math.sin(time * 3.1 + (who === "adi" ? 2 : 0)) > 0.92);
+
+  pr(x - 18, y + 6, 36, 6, "rgba(0,0,0,0.28)");
+
+  pr(x - 11, yy - 6, 9, 16, L.pants);
+  pr(x + 2, yy - 6, 9, 16, L.pants);
+  pr(x - 12, yy + 8, 11, 4, L.shoe);
+  pr(x + 1, yy + 8, 11, 4, L.shoe);
+
+  pr(x - 15, yy - 30, 30, 26, L.shirt);
+  pr(x - 15, yy - 30, 30, 3, L.shirtD);
+
+  if (who === "adi") {
+    pr(x - 4, yy - 30, 8, 4, "#e8e8e8");
+    pr(x - 2, yy - 28, 4, 18, "#8a1a1a");
+    pr(x - 3, yy - 28, 6, 3, "#c03030");
+  } else {
+    pr(x - 7, yy - 30, 14, 5, L.shirtD);
+  }
+
+  const armSwing = Math.sin(time * 2 + (who === "guntur" ? 0 : 1.5)) * 2;
+  pr(x - 20, yy - 28 + armSwing * 0.3, 7, 18, L.skin);
+  pr(x + 13, yy - 28 - armSwing * 0.3, 7, 18, L.skin);
+  pr(x - 20, yy - 28, 7, 5, L.shirt);
+  pr(x + 13, yy - 28, 7, 5, L.shirt);
+
+  const hx = x, hy = yy - 30;
+
+  if (who === "adi") {
+    pr(hx - 15, hy - 40, 30, 16, L.hair);
+    pr(hx - 17, hy - 32, 34, 10, L.hair);
+    pr(hx - 17, hy - 26, 5, 7, "#5a5a60");
+    pr(hx + 12, hy - 26, 5, 7, "#5a5a60");
+  } else {
+    pr(hx - 15, hy - 42, 30, 14, L.hair);
+    pr(hx - 17, hy - 34, 34, 12, L.hair);
+    pr(hx - 14, hy - 44, 10, 6, L.hairH);
+    pr(hx + 4, hy - 44, 10, 6, L.hairH);
+  }
+
+  pr(hx - 13, hy - 32, 26, 24, L.skin);
+  pr(hx - 13, hy - 32, 26, 3, L.skinD);
+
+  if (blink) {
+    pr(hx - 8, hy - 24, 5, 2, "#1a120e");
+    pr(hx + 3, hy - 24, 5, 2, "#1a120e");
+  } else {
+    pr(hx - 8, hy - 25, 5, 5, "#f4efe4");
+    pr(hx + 3, hy - 25, 5, 5, "#f4efe4");
+    pr(hx - 7, hy - 24, 3, 3, "#1a120e");
+    pr(hx + 4, hy - 24, 3, 3, "#1a120e");
+  }
+
+  if (expr === "worry") {
+    pr(hx - 9, hy - 30, 6, 2, L.hair);
+    pr(hx + 3, hy - 30, 6, 2, L.hair);
+  } else if (expr === "smile" || expr === "smirk") {
+    pr(hx - 9, hy - 29, 5, 2, L.hair);
+    pr(hx + 4, hy - 29, 5, 2, L.hair);
+  } else {
+    pr(hx - 8, hy - 29, 5, 2, L.hair);
+    pr(hx + 3, hy - 29, 5, 2, L.hair);
+  }
+
+  pr(hx - 1, hy - 18, 2, 4, L.skinD);
+
+  const talk = (phase === "talk" && LINES[lineI] && LINES[lineI].who === who && charI < (LINES[lineI].t || "").length);
+  const mouthOpen = talk && ((time * 10) | 0) % 2 === 0;
+
+  if (mouthOpen) {
+    pr(hx - 3, hy - 12, 6, 4, "#6a2a28");
+  } else if (expr === "smile") {
+    pr(hx - 5, hy - 12, 10, 2, "#9a4a42");
+    pr(hx - 6, hy - 13, 2, 2, "#9a4a42");
+    pr(hx + 4, hy - 13, 2, 2, "#9a4a42");
+  } else if (expr === "smirk") {
+    pr(hx - 2, hy - 12, 8, 2, "#9a4a42");
+    pr(hx + 5, hy - 13, 2, 2, "#9a4a42");
+  } else if (expr === "worry") {
+    pr(hx - 3, hy - 11, 6, 2, "#9a4a42");
+  } else {
+    pr(hx - 3, hy - 12, 6, 2, "#9a4a42");
+  }
+
+  const label = who === "adi" ? "PAK ADI" : "GUNTUR";
+  const col = who === "adi" ? "#7ec8c0" : "#e0c888";
+  text(label, x, y + 16, 10, col, "center");
+}
+
+function drawCake(x, y) {
+  pr(x - 30, y + 10, 60, 6, "#e8e0d0");
+  pr(x - 26, y + 14, 52, 3, "#c8c0b0");
+  pr(x - 24, y - 6, 48, 18, "#e8b878");
+  pr(x - 22, y - 18, 44, 14, "#f0c890");
+  pr(x - 18, y - 26, 36, 10, "#f8d8a0");
+  pr(x - 22, y - 6, 5, 7, "#f4efe4");
+  pr(x + 6, y - 6, 5, 9, "#f4efe4");
+  pr(x - 4, y - 6, 5, 5, "#f4efe4");
+  pr(x - 2, y - 40, 4, 16, "#f0e8d8");
+  pr(x - 3, y - 42, 6, 3, "#c04040");
+  const fl = Math.sin(time * 14) * 2;
+  pr(x - 1, y - 50 + fl, 3, 7, "#f0c040");
+  pr(x, y - 54 + fl, 2, 4, "#fff0c0");
+}
+
+function drawDialogBox() {
+  const line = LINES[lineI];
+  if (!line) return;
+  const boxY = H - 156;
+  const border = line.who === "adi" ? "#7ec8c0" : line.who === "guntur" ? "#e0c888" : "#a89880";
+
+  pr(14, boxY, W - 28, 138, "rgba(8,10,14,0.94)");
+  pr(14, boxY, W - 28, 3, border);
+  pr(16, boxY + 3, W - 32, 132, "#14181e");
+
+  if (line.who === "narr") {
+    const shown = (line.t || "").slice(0, charI);
+    if (line.t === "SELAMAT ULANG TAHUN") {
+      text(shown, W / 2, boxY + 44, 18, "#e0c888", "center");
+    } else {
+      const ls = wrap(shown, W - 60, 13);
+      ls.forEach((ln, i) => text(ln, W / 2, boxY + 36 + i * 20, 14, "#c8b89a", "center"));
+    }
+  } else {
+    const name = line.who === "adi" ? "PAK ADI" : "GUNTUR KHOIDIR PUTRA";
+    const ncol = line.who === "adi" ? "#7ec8c0" : "#e0c888";
+    text(name, 30, boxY + 12, 13, ncol, "left");
+    const shown = (line.t || "").slice(0, charI);
+    const ls = wrap(shown, W - 60, 13);
+    ls.forEach((ln, i) => text(ln, 30, boxY + 36 + i * 19, 14, "#f4efe4", "left"));
+  }
+
+  if (charI >= (line.t || "").length) {
+    if (Math.sin(time * 5) > 0) text("▼", W - 36, boxY + 116, 11, "#a89880", "center");
+  }
+}
+
+function spawnConfetti() {
+  for (let i = 0; i < 55; i++) {
+    confetti.push({
+      x: Math.random() * W,
+      y: -10 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 70,
+      vy: 35 + Math.random() * 90,
+      c: ["#e0c888", "#7ec8c0", "#c04040", "#f0e8d8", "#70c8e0", "#e0a040"][(Math.random() * 6) | 0],
+      w: 3 + Math.random() * 6,
+      h: 3 + Math.random() * 5,
+    });
+  }
+}
+
+function drawConfetti(dt) {
+  for (let i = confetti.length - 1; i >= 0; i--) {
+    const p = confetti[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 28 * dt;
+    pr(p.x, p.y, p.w, p.h, p.c);
+    if (p.y > H + 20) confetti.splice(i, 1);
+  }
+}
+
+function drawTitle() {
+  pr(36, 180, W - 72, 150, "rgba(8,10,14,0.9)");
+  pr(36, 180, W - 72, 3, "#e0c888");
+  text("PT ADHI CHANDRA JAYA", W / 2, 198, 11, "#7ec8c0", "center");
+  text("UCAPAN KHUSUS", W / 2, 220, 12, "#a89880", "center");
+  text("SELAMAT ULANG TAHUN", W / 2, 250, 17, "#f4efe4", "center");
+  text("Bapak Novri Adi Chandra", W / 2, 278, 14, "#e0c888", "center");
+  text(AGE + " tahun  ·  1979 – 2026", W / 2, 302, 12, "#a89880", "center");
+  if (Math.sin(time * 4) > 0) text("ketuk / spasi untuk mulai", W / 2, 370, 12, "#a89880", "center");
+}
+
+function drawEndCard() {
+  pr(28, 130, W - 56, 320, "rgba(8,10,14,0.94)");
+  pr(28, 130, W - 56, 3, "#e0c888");
+  text("SELAMAT ULANG TAHUN", W / 2, 156, 17, "#e0c888", "center");
+  text("Bapak Novri Adi Chandra", W / 2, 186, 14, "#f4efe4", "center");
+  text(AGE + " tahun", W / 2, 216, 22, "#7ec8c0", "center");
+  text("1979  →  2026", W / 2, 248, 12, "#a89880", "center");
+  text("Semoga sehat, panjang umur,", W / 2, 280, 12, "#d5ebe8", "center");
+  text("keluarga dilindungi, usaha diberkahi.", W / 2, 300, 12, "#d5ebe8", "center");
+  text("Tahun ini lebih tenang & penuh kebaikan.", W / 2, 320, 12, "#d5ebe8", "center");
+  text("Dengan hormat,", W / 2, 356, 11, "#c8b89a", "center");
+  text("Guntur Khoidir Putra", W / 2, 378, 13, "#e0c888", "center");
+  text("SMK-SMTI Yogyakarta", W / 2, 400, 11, "#a89880", "center");
+  text("Anak PKL · PT Adhi Chandra Jaya", W / 2, 420, 11, "#a89880", "center");
+}
+
+function advance() {
+  if (phase === "intro") {
+    phase = "talk"; lineI = 0; charI = 0; hold = 0;
+    return;
+  }
+  if (phase === "talk") {
+    const line = LINES[lineI];
+    if (!line) return;
+    if (charI < line.t.length) { charI = line.t.length; return; }
+    lineI++;
+    charI = 0; hold = 0;
+    if (lineI >= LINES.length) {
+      phase = "cake";
+      spawnConfetti();
+      return;
+    }
+    if (LINES[lineI] && LINES[lineI].t === "SELAMAT ULANG TAHUN") spawnConfetti();
+    return;
+  }
+  if (phase === "cake") phase = "end";
+}
+
+canvas.addEventListener("click", advance);
+canvas.addEventListener("touchstart", (e) => { e.preventDefault(); advance(); }, { passive: false });
+window.addEventListener("keydown", (e) => {
+  if (e.key === " " || e.key === "Enter" || e.key === "e" || e.key === "E") {
+    e.preventDefault();
+    advance();
+  }
+});
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  time += dt;
+
+  if (phase === "talk") {
+    const line = LINES[lineI];
+    if (line && charI < line.t.length) {
+      hold += dt;
+      if (hold > 0.024) { hold = 0; charI++; }
+    }
+  }
+
+  ctx.fillStyle = "#07080c";
+  ctx.fillRect(0, 0, W, H);
+
+  const line = LINES[lineI];
+  const gExpr = (phase === "talk" && line && line.who === "guntur") ? (line.e || "smile") : "smile";
+  const aExpr = (phase === "talk" && line && line.who === "adi") ? (line.e || "neutral") : (phase === "end" || phase === "cake" ? "smile" : "neutral");
+
+  if (phase === "intro") {
+    drawOffice();
+    drawActor(155, 385, "guntur", "smile");
+    drawActor(325, 385, "adi", "neutral");
+    drawTitle();
+  } else if (phase === "talk") {
+    drawOffice();
+    drawActor(155, 385, "guntur", gExpr);
+    drawActor(325, 385, "adi", aExpr);
+    if (lineI >= 44) drawCake(240, 335);
+    drawDialogBox();
+    drawConfetti(dt);
+  } else {
+    drawOffice();
+    drawActor(155, 385, "guntur", "smile");
+    drawActor(325, 385, "adi", "smile");
+    drawCake(240, 335);
+    drawConfetti(dt);
+    if (phase === "end") drawEndCard();
+    else text("ketuk untuk kartu akhir", W / 2, H - 36, 12, "#a89880", "center");
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+canvas.focus();
+})();
+</script>
+</body>
+</html>
